@@ -10,7 +10,7 @@ class MyWindow(QWidget):
         self.init_UI()
 
         # 创建选项卡部件
-        self.tab_widget = QTabWidget()
+        self.tab_widget = QTabWidget(self)
 
         # 创建文件选项卡
         self.file_tab = FileTab()
