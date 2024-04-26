@@ -1,22 +1,19 @@
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QPushButton, QFontDialog, QTextEdit, QGridLayout
 
 
 class SettingsTab(QWidget):
 
-    def __init__(self):
-
+    def __init__(self, settings):
         super().__init__()
+        self.text_edit = QTextEdit()
+        self.fontButton = QPushButton("选择字体")
+        self.fontButton.clicked.connect(lambda: self.changeFont(settings))  # 当按钮被点击时，调用changeFont方法
 
-        # 在这里添加设置选项卡的自定义组件
+        self.gLayout = QGridLayout()
+        self.gLayout.addWidget(self.fontButton)
+        self.setLayout(self.gLayout)
 
-        # 例如：self.some_widget = SomeCustomWidget()
-
-        # 假设我们有一个自定义的组件 SomeCustomWidget
-
-        # layout = QVBoxLayout()
-
-        # layout.addWidget(self.some_widget)
-
-        # self.setLayout(layout)
-
-        pass
+    def changeFont(self, settings):
+        ok, font = QFontDialog().getFont(settings.qFont)  # 显示字体选择对话框
+        if ok:
+            settings.qFont = font

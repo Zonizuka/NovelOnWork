@@ -1,12 +1,7 @@
-import configparser
-
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QMouseEvent, QGuiApplication, QFont, QPainter, QPen, QColor, QFontMetrics, \
+from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, QFontMetrics, \
     QKeySequence, QShortcut
-
-config = configparser.ConfigParser()
-config.read('settings.ini')
 
 
 def readText(fileName):
@@ -17,22 +12,15 @@ def readText(fileName):
 
 
 class ReadWindow(QWidget):
-    def __init__(self, fileName):
+    def __init__(self, settings, fileName):
         super().__init__()
 
-        self.font = QFont(config.get('settings', 'fontStyle'), int(config.get('settings', 'fontSize')))
         self.color = QColor(0, 0, 0)
 
-        self.textLine = int(config.get('settings', 'textLine'))
-        self.lineSize = int(config.get('settings', 'lineSize'))
-        self.textSize = self.textLine * self.lineSize
+        self.settings = settings
 
-        # 页数
-        self.pageSize, self.pages, self.lastPage, self.currentPage = self.initPage()
-
-        # 初始化文本
         self.textContent = readText(fileName)
-        self.text = self.rollPage(self.pages[self.currentPage])
+        self.text = self.rollPage(self.settings.currentPage)
 
         self.initUI()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -51,21 +39,24 @@ class ReadWindow(QWidget):
     def paintEvent(self, event):
 
         painter = QPainter(self)
-
-        painter.setFont(self.font)
-
+        painter.setFont(self.settings.qFont)
         painter.setPen(QPen(self.color))
-
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
-
-        painter.drawText(self.rect(), Qt.AlignmentFlag.AlignLeft, self.text)
+        textLines = self.text.split('\n')
+        metrics = QFontMetrics(self.settings.font)
+        yPosition = metrics.ascent()
+        # 遍历文本行列表
+        for line in textLines:
+            # 在当前y_position位置绘制文本行
+            painter.drawText(QPoint(0, yPosition), line)
+            # 更新y_position位置为下一行文本的基线位置，包括行间距
+            yPosition += metrics.height() + self.settings.lineSpacing
 
     def initUI(self):
         # 计算文本高度和宽度
-        fontMetrics = QFontMetrics(self.font)
-        textWidth = fontMetrics.horizontalAdvance('中') * 20
-        textHeight = (fontMetrics.height() + fontMetrics.leading()) * self.textLine
-
+        fontMetrics = QFontMetrics(self.settings.font)
+        textWidth = fontMetrics.horizontalAdvance('中') * self.settings.lineSize
+        textHeight = (fontMetrics.height() + self.settings.lineSpacing) * self.settings.textLine - self.settings.lineSpacing
         # 获取主屏幕
         screen = QGuiApplication.primaryScreen()
         # 获取屏幕的尺寸
@@ -76,14 +67,6 @@ class ReadWindow(QWidget):
         x = screenWidth - 500
         y = screenHeight - 200
         self.setGeometry(x, y, textWidth, textHeight)
-
-    def initPage(self):
-        pageSize = int(config.get('settings', 'pageSize'))
-        pages = [int(s) for s in config.get('settings', 'pages').split(',')]
-        pages.extend([0] * (pageSize - len(pages)))
-        lastPage = int(config.get('settings', 'lastPage'))
-        currentPage = int(config.get('settings', 'currentPage'))
-        return pageSize, pages, lastPage, currentPage
 
     # 根据mark来移动标记的指针，正向
     def subText(self, mark):
@@ -107,12 +90,12 @@ class ReadWindow(QWidget):
             else:
                 string += char
                 count += 1
-                if count >= self.lineSize:
+                if count >= self.settings.lineSize:
                     string += '\n'
                     count = 0
                     line += 1
             mark += 1
-            if line >= self.textLine:
+            if line >= self.settings.textLine:
                 break
         return string, mark
 
@@ -121,17 +104,19 @@ class ReadWindow(QWidget):
         # 先判断想要获取的页码是否大于lastPage
         if page < 0:
             return
-        pageOffset = page - self.lastPage
+        pageOffset = page - self.settings.lastPage
         if pageOffset >= 0:
-            self.currentPage = page
-            text, mark = self.subText(self.pages[page % self.pageSize])
-            self.pages[(page + 1) % self.pageSize] = mark
-            self.lastPage += 1
+            text, nextMark = self.subText(self.settings.pages[page % self.settings.pageSize])
+            if len(text) == 0:
+                return
+            self.settings.currentPage = page
+            self.settings.pages[(page + 1) % self.settings.pageSize] = nextMark
+            self.settings.lastPage += 1
             return text
         else:
-            if -pageOffset < self.pageSize:
-                self.currentPage = page
-                text, _ = self.subText(self.pages[page % self.pageSize])
+            if -pageOffset < self.settings.pageSize:
+                self.settings.currentPage = page
+                text, _ = self.subText(self.settings.pages[page % self.settings.pageSize])
                 return text
             else:
                 return
@@ -164,13 +149,13 @@ class ReadWindow(QWidget):
         self.drag_position = QPoint()
 
     def next_shortcut_activated(self):
-        text = self.rollPage(self.currentPage + 1)
+        text = self.rollPage(self.settings.currentPage + 1)
         if text:
             self.text = text
             self.update()
 
     def last_shortcut_activated(self):
-        text = self.rollPage(self.currentPage - 1)
+        text = self.rollPage(self.settings.currentPage - 1)
         if text:
             self.text = text
             self.update()
