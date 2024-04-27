@@ -4,18 +4,22 @@ from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, 
     QKeySequence, QShortcut
 
 
+# 只支持utf-8和ANSI编码格式
 def readText(fileName):
     # 读取文本
-    with open(fileName, 'r', encoding='utf-8') as file:
-        content = file.read()
-        return content
+    try:
+        with open(fileName, 'r', encoding='utf-8') as file:
+            content = file.read()
+            return content
+    except UnicodeDecodeError:
+        with open(fileName, 'r', encoding='ANSI') as file:
+            content = file.read()
+            return content
 
 
 class ReadWindow(QWidget):
     def __init__(self, settings, fileName):
         super().__init__()
-
-        self.color = QColor(0, 0, 0)
 
         self.settings = settings
 
@@ -40,16 +44,16 @@ class ReadWindow(QWidget):
 
         painter = QPainter(self)
         painter.setFont(self.settings.qFont)
-        painter.setPen(QPen(self.color))
+        painter.setPen(QPen(self.settings.qColor))
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
         textLines = self.text.split('\n')
         metrics = QFontMetrics(self.settings.font)
         yPosition = metrics.ascent()
         # 遍历文本行列表
         for line in textLines:
-            # 在当前y_position位置绘制文本行
+            # 在当前yPosition位置绘制文本行
             painter.drawText(QPoint(0, yPosition), line)
-            # 更新y_position位置为下一行文本的基线位置，包括行间距
+            # 更新yPosition位置为下一行文本的基线位置，包括行间距
             yPosition += metrics.height() + self.settings.lineSpacing
 
     def initUI(self):
@@ -101,7 +105,6 @@ class ReadWindow(QWidget):
 
     # 翻页功能，查找并处理文本
     def rollPage(self, page):
-        # 先判断想要获取的页码是否大于lastPage
         if page < 0:
             return
         pageOffset = page - self.settings.lastPage

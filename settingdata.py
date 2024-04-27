@@ -1,6 +1,6 @@
 import configparser
 
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QColor
 
 
 class SettingData:
@@ -9,13 +9,18 @@ class SettingData:
         self.textLine = 2
         self.lineSize = 20
         self.lineSpacing = 3
-        self.pageSize = 10
-        self.pages = [0]
+        self.pageSize = 20
+        self.pages = [0] * self.pageSize
         self.lastPage = 0
         self.currentPage = 0
         self.font = 'Arial'
         self.size = 12
         self.qFont = self.initFont()
+        self.red = 0
+        self.green = 0
+        self.blue = 0
+        self.alpha = 255
+        self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
 
     def readData(self):
         config = configparser.ConfigParser()
@@ -25,14 +30,20 @@ class SettingData:
         self.lineSize = int(config.get('settings', 'lineSize'))
         self.lineSpacing = int(config.get('settings', 'lineSpacing'))
         self.pageSize = int(config.get('settings', 'pageSize'))
-        pages = [int(s) for s in config.get('settings', 'pages').split(',')]
-        pages.extend([0] * (self.pageSize - len(pages)))
-        self.pages = pages
+        pages = config.get('settings', 'pages').split(',')
+        self.pages = [0] * self.pageSize
+        for i in range(0, len(pages)):
+            self.pages[i] = int(pages[i])
         self.lastPage = int(config.get('settings', 'lastPage'))
         self.currentPage = int(config.get('settings', 'currentPage'))
         self.font = config.get('fontSettings', 'font')
         self.size = int(config.get('fontSettings', 'size'))
         self.qFont = self.initFont()
+        self.red = int(config.get('fontSettings', 'red'))
+        self.green = int(config.get('fontSettings', 'green'))
+        self.blue = int(config.get('fontSettings', 'blue'))
+        self.alpha = int(config.get('fontSettings', 'alpha'))
+        self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
 
     def initFont(self):
         font = QFont(self.font, self.size)

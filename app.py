@@ -11,7 +11,10 @@ class MyWindow(QWidget):
         self.initUI()
 
         self.settings = SettingData()
-        self.settings.readData()
+        try:
+            self.settings.readData()
+        except Exception as e:
+            print(e)
 
         # 创建选项卡部件
         self.tab_widget = QTabWidget()
