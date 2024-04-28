@@ -10,15 +10,16 @@ class FileTab(QWidget):
         btn = QPushButton("打开新文件")
         btn.setMaximumSize(90, 30)
         self.open_button = btn
+
+        self.readWindow = None
         self.open_button.clicked.connect(lambda: self.open_file_dialog(settings))
 
-        h_layout = QHBoxLayout()
-        h_layout.addWidget(self.open_button)
-        self.setLayout(h_layout)
+        hLayout = QHBoxLayout(self)
+        hLayout.addWidget(self.open_button)
 
     def open_file_dialog(self, settings):
         fileName, _ = QFileDialog.getOpenFileName(self, "选择文本文件", "", "Text Files (*.txt)")
         if fileName:
-            print(f"选中的文件: {fileName}")
             self.readWindow = ReadWindow(settings, fileName)
-            self.readWindow.show()
+            if self.readWindow:
+                self.readWindow.show()

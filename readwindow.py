@@ -1,20 +1,29 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, QFontMetrics, \
-    QKeySequence, QShortcut
+    QKeySequence, QShortcut, QAction
 
 
 # 只支持utf-8和ANSI编码格式
-def readText(fileName):
+def readText(settings, fileName):
     # 读取文本
-    try:
-        with open(fileName, 'r', encoding='utf-8') as file:
-            content = file.read()
-            return content
-    except UnicodeDecodeError:
-        with open(fileName, 'r', encoding='ANSI') as file:
-            content = file.read()
-            return content
+    if settings.filePath != fileName:
+        settings.currentPage = 0
+        settings.lastPage = 0
+        settings.pages = [0] * settings.pageSize
+    settings.filePath = fileName
+
+    encodings = ['utf-8', 'ANSI', 'gbk']
+    # 尝试每种编码格式
+    for encoding in encodings:
+        try:
+            with open(fileName, 'r', encoding=encoding) as file:
+                text = file.read()
+                return text
+        except UnicodeDecodeError:
+            pass
+            # 如果所有编码都失败，抛出异常
+    raise IOError(f"Could not decode the file {fileName} with any of the encodings: {encodings}")
 
 
 class ReadWindow(QWidget):
@@ -22,23 +31,26 @@ class ReadWindow(QWidget):
         super().__init__()
 
         self.settings = settings
-
-        self.textContent = readText(fileName)
+        self.textContent = readText(settings, fileName)
         self.text = self.rollPage(self.settings.currentPage)
-
         self.initUI()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.closeSelf = QAction("关闭")
+        self.addAction(self.closeSelf)
+        self.closeSelf.triggered.connect(self.close)
+
         # 初始化鼠标按下的位置
-        self.drag_position = QPoint()
+        self.mousePosition = QPoint()
         self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
 
         # 添加快捷键
         self.next = QShortcut(QKeySequence("Ctrl+C"), self)
         self.last = QShortcut(QKeySequence("Ctrl+X"), self)
-        self.next.activated.connect(self.next_shortcut_activated)
-        self.last.activated.connect(self.last_shortcut_activated)
+        self.next.activated.connect(lambda: self.rollPageActive(self.settings.currentPage + 1))
+        self.last.activated.connect(lambda: self.rollPageActive(self.settings.currentPage - 1))
 
     def paintEvent(self, event):
 
@@ -139,26 +151,20 @@ class ReadWindow(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # 如果按下的是鼠标左键，记录按下时的位置
         if event.button() == Qt.MouseButton.LeftButton:
-            self.drag_position = event.pos()
+            self.mousePosition = event.pos()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         # 如果鼠标左键被按下，移动窗口
         if event.buttons() & Qt.MouseButton.LeftButton:
-            delta = event.pos() - self.drag_position
+            delta = event.pos() - self.mousePosition
             self.move(self.x() + delta.x(), self.y() + delta.y())
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         # 鼠标释放时重置拖动位置
-        self.drag_position = QPoint()
+        self.mousePosition = QPoint()
 
-    def next_shortcut_activated(self):
-        text = self.rollPage(self.settings.currentPage + 1)
-        if text:
-            self.text = text
-            self.update()
-
-    def last_shortcut_activated(self):
-        text = self.rollPage(self.settings.currentPage - 1)
+    def rollPageActive(self, page):
+        text = self.rollPage(page)
         if text:
             self.text = text
             self.update()

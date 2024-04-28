@@ -15,7 +15,7 @@ class SettingData:
         self.currentPage = 0
         self.font = 'Arial'
         self.size = 12
-        self.qFont = self.initFont()
+        self.qFont = QFont(self.font, self.size)
         self.red = 0
         self.green = 0
         self.blue = 0
@@ -38,15 +38,9 @@ class SettingData:
         self.currentPage = int(config.get('settings', 'currentPage'))
         self.font = config.get('fontSettings', 'font')
         self.size = int(config.get('fontSettings', 'size'))
-        self.qFont = self.initFont()
+        self.qFont = QFont(self.font, self.size)
         self.red = int(config.get('fontSettings', 'red'))
         self.green = int(config.get('fontSettings', 'green'))
         self.blue = int(config.get('fontSettings', 'blue'))
         self.alpha = int(config.get('fontSettings', 'alpha'))
         self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
-
-    def initFont(self):
-        font = QFont(self.font, self.size)
-        return font
-
-

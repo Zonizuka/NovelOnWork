@@ -30,13 +30,12 @@ class MyWindow(QWidget):
         self.tab_widget.addTab(self.settings_tab, "设置")
 
         # 创建主布局
-        layout = QVBoxLayout()
+        layout = QVBoxLayout(self)
         layout.addWidget(self.tab_widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         # 设置窗口的布局
-        self.setLayout(layout)
 
     def initUI(self):
 
