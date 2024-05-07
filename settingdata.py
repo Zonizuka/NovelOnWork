@@ -3,6 +3,7 @@ import configparser
 from PySide6.QtGui import QFont, QColor
 
 
+#  单例模式
 class SettingData:
     def __init__(self):
         self.filePath = ""
@@ -44,3 +45,6 @@ class SettingData:
         self.blue = int(config.get('fontSettings', 'blue'))
         self.alpha = int(config.get('fontSettings', 'alpha'))
         self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
+
+
+settingData = SettingData()

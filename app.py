@@ -1,7 +1,7 @@
 from PySide6 import QtGui
 from PySide6.QtWidgets import QApplication, QWidget, QTabWidget, QVBoxLayout
 from filetab import FileTab
-from settingdata import SettingData
+from settingdata import settingData
 from settingtab import SettingsTab
 
 
@@ -10,7 +10,7 @@ class MyWindow(QWidget):
         super().__init__()
         self.initUI()
 
-        self.settings = SettingData()
+        self.settings = settingData
         try:
             self.settings.readData()
         except Exception as e:
@@ -20,12 +20,12 @@ class MyWindow(QWidget):
         self.tab_widget = QTabWidget()
 
         # 创建文件选项卡
-        self.file_tab = FileTab(self.settings)
+        self.file_tab = FileTab()
         # 添加文件选项卡到 QTabWidget
         self.tab_widget.addTab(self.file_tab, "文件")
 
         # 创建设置选项卡
-        self.settings_tab = SettingsTab(self.settings)
+        self.settings_tab = SettingsTab()
         # 添加设置选项卡到 QTabWidget
         self.tab_widget.addTab(self.settings_tab, "设置")
 

@@ -1,15 +1,16 @@
 from PySide6.QtWidgets import QWidget, QPushButton, QFontDialog, QGridLayout, QColorDialog, QLabel, QSpinBox
+from settingdata import settingData
 
 
 class SettingsTab(QWidget):
 
-    def __init__(self, settings):
+    def __init__(self):
         super().__init__()
         self.fontButton = QPushButton("字体大小")
-        self.fontButton.clicked.connect(lambda: self.changeFont(settings))
+        self.fontButton.clicked.connect(self.changeFont)
 
         self.fontColorButton = QPushButton("字体颜色")
-        self.fontColorButton.clicked.connect(lambda: self.changeColor(settings))
+        self.fontColorButton.clicked.connect(self.changeColor)
 
         self.textLineSet = QSpinBox()
         self.lineSizeSet = QSpinBox()
@@ -22,12 +23,12 @@ class SettingsTab(QWidget):
         self.gLayout.addWidget(QLabel('每行文字数'), 1, 2)
         self.gLayout.addWidget(self.lineSizeSet, 1, 3)
 
-    def changeFont(self, settings):
-        ok, font = QFontDialog().getFont(settings.qFont, self)  # 显示字体选择对话框
+    def changeFont(self):
+        ok, font = QFontDialog().getFont(settingData.qFont, self)  # 显示字体选择对话框
         if ok:
-            settings.qFont = font
+            settingData.qFont = font
 
-    def changeColor(self, settings):
-        color = QColorDialog.getColor(settings.qColor, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel)
+    def changeColor(self):
+        color = QColorDialog.getColor(settingData.qColor, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if color.isValid():
-            settings.qColor = color
+            settingData.qColor = color
