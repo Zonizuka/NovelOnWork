@@ -49,6 +49,12 @@ class MyWindow(QWidget):
         size = self.geometry()
         self.move(int((screen.width() - size.width()) / 2), int((screen.height() - size.height()) / 2))
 
+    def closeEvent(self, event):
+        settingData.writeData()
+
+        # 默认情况下，我们允许窗口关闭
+        event.accept()
+
 
 if __name__ == '__main__':
     app = QApplication([])

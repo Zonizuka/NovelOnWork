@@ -1,5 +1,15 @@
-from PySide6.QtWidgets import QWidget, QPushButton, QFontDialog, QGridLayout, QColorDialog, QLabel, QSpinBox
+from PySide6.QtWidgets import QWidget, QPushButton, QFontDialog, QGridLayout, QColorDialog, QLabel, QSpinBox, \
+    QKeySequenceEdit, QVBoxLayout, QHBoxLayout, QLineEdit
 from settingdata import settingData
+from PySide6.QtCore import Qt
+
+
+def setTextAndComp(text, comp):
+    textLayout = QHBoxLayout()
+    textLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+    textLayout.addWidget(QLabel(text))
+    textLayout.addWidget(comp)
+    return textLayout
 
 
 class SettingsTab(QWidget):
@@ -14,14 +24,52 @@ class SettingsTab(QWidget):
 
         self.textLineSet = QSpinBox()
         self.lineSizeSet = QSpinBox()
+        self.lineSpacingSet = QSpinBox()
 
-        self.gLayout = QGridLayout(self)
-        self.gLayout.addWidget(self.fontButton, 0, 0)
-        self.gLayout.addWidget(self.fontColorButton, 0, 2)
-        self.gLayout.addWidget(QLabel('文本行数'), 1, 0)
-        self.gLayout.addWidget(self.textLineSet, 1, 1)
-        self.gLayout.addWidget(QLabel('每行文字数'), 1, 2)
-        self.gLayout.addWidget(self.lineSizeSet, 1, 3)
+        self.textLineSet.setValue(settingData.textLine)
+        self.lineSizeSet.setValue(settingData.lineSize)
+        self.lineSpacingSet.setValue(settingData.lineSpacing)
+
+        self.textLineSet.setMinimum(1)
+        self.textLineSet.setMinimumWidth(60)
+        self.lineSizeSet.setMinimum(1)
+        self.lineSizeSet.setMinimumWidth(60)
+        self.lineSpacingSet.setMinimum(0)
+        self.lineSpacingSet.setMinimumWidth(60)
+
+        self.textLineSet.valueChanged.connect(self.changeTextLine)
+        self.lineSizeSet.valueChanged.connect(self.changeLineSize)
+        self.lineSpacingSet.valueChanged.connect(self.changeLineSpacing)
+
+        self.mainLayout = QVBoxLayout(self)
+        self.fontLayout = QHBoxLayout()
+        self.fontLayout.addWidget(self.fontButton)
+        self.fontLayout.addWidget(self.fontColorButton)
+
+        self.textLayout = QHBoxLayout()
+        self.textLine = setTextAndComp('文本行数', self.textLineSet)
+        self.lineSize = setTextAndComp('行文字数', self.lineSizeSet)
+        self.textSpacing = setTextAndComp('行间距   ', self.lineSpacingSet)
+        self.textLayout.addLayout(self.textLine)
+        self.textLayout.addLayout(self.lineSize)
+        # self.textLayout.addLayout(self.textSpacing)
+
+        self.nextShortCut = QLineEdit(settingData.nextShortCut)
+        self.lastShortCut = QLineEdit(settingData.lastShortCut)
+        self.shortCutLayout = QHBoxLayout()
+        self.next = setTextAndComp('下一页', self.nextShortCut)
+        self.last = setTextAndComp('上一页', self.lastShortCut)
+        self.nextShortCut.textChanged.connect(self.changeNext)
+        self.lastShortCut.textChanged.connect(self.changeLast)
+        self.shortCutLayout.addLayout(self.next)
+        self.shortCutLayout.addLayout(self.last)
+
+        self.mainLayout.addLayout(self.fontLayout)
+        self.mainLayout.addLayout(self.textLayout)
+        # self.mainLayout.addLayout(self.textLine)
+        # self.mainLayout.addLayout(self.lineSize)
+        self.mainLayout.addLayout(self.textSpacing)
+        self.mainLayout.addLayout(self.shortCutLayout)
 
     def changeFont(self):
         ok, font = QFontDialog().getFont(settingData.qFont, self)  # 显示字体选择对话框
@@ -32,3 +80,18 @@ class SettingsTab(QWidget):
         color = QColorDialog.getColor(settingData.qColor, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if color.isValid():
             settingData.qColor = color
+
+    def changeTextLine(self, value):
+        settingData.textLine = value
+
+    def changeLineSize(self, value):
+        settingData.lineSize = value
+
+    def changeLineSpacing(self, value):
+        settingData.lineSpacing = value
+
+    def changeNext(self, text):
+        settingData.nextShortCut = text
+
+    def changeLast(self, text):
+        settingData.lastShortCut = text

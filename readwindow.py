@@ -2,16 +2,17 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, QFontMetrics, \
     QKeySequence, QShortcut, QAction
+from settingdata import settingData
 
 
 # 只支持utf-8和ANSI编码格式
-def readText(settings, fileName):
+def readText(fileName):
     # 读取文本
-    if settings.filePath != fileName:
-        settings.currentPage = 0
-        settings.lastPage = 0
-        settings.pages = [0] * settings.pageSize
-    settings.filePath = fileName
+    if settingData.filePath != fileName:
+        settingData.currentPage = 0
+        settingData.lastPage = 0
+        settingData.pages = [0] * settingData.pageSize
+    settingData.filePath = fileName
 
     encodings = ['utf-8', 'ANSI', 'gbk']
     # 尝试每种编码格式
@@ -27,11 +28,11 @@ def readText(settings, fileName):
 
 
 class ReadWindow(QWidget):
-    def __init__(self, settings, fileName):
+    def __init__(self, fileName):
         super().__init__()
 
-        self.settings = settings
-        self.textContent = readText(settings, fileName)
+        self.settings = settingData
+        self.textContent = readText(fileName)
         self.text = self.rollPage(self.settings.currentPage)
         self.initUI()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -47,8 +48,8 @@ class ReadWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
 
         # 添加快捷键
-        self.next = QShortcut(QKeySequence("Ctrl+C"), self)
-        self.last = QShortcut(QKeySequence("Ctrl+X"), self)
+        self.next = QShortcut(QKeySequence(settingData.nextShortCut), self)
+        self.last = QShortcut(QKeySequence(settingData.lastShortCut), self)
         self.next.activated.connect(lambda: self.rollPageActive(self.settings.currentPage + 1))
         self.last.activated.connect(lambda: self.rollPageActive(self.settings.currentPage - 1))
 
@@ -59,7 +60,7 @@ class ReadWindow(QWidget):
         painter.setPen(QPen(self.settings.qColor))
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
         textLines = self.text.split('\n')
-        metrics = QFontMetrics(self.settings.font)
+        metrics = QFontMetrics(self.settings.qFont)
         yPosition = metrics.ascent()
         # 遍历文本行列表
         for line in textLines:
@@ -70,7 +71,7 @@ class ReadWindow(QWidget):
 
     def initUI(self):
         # 计算文本高度和宽度
-        fontMetrics = QFontMetrics(self.settings.font)
+        fontMetrics = QFontMetrics(self.settings.qFont)
         textWidth = fontMetrics.horizontalAdvance('中') * self.settings.lineSize
         textHeight = (fontMetrics.height() + self.settings.lineSpacing) * self.settings.textLine - self.settings.lineSpacing
         # 获取主屏幕
