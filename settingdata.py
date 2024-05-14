@@ -26,6 +26,11 @@ class SettingData:
         self.blue = 0
         self.alpha = 255
         self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
+        self.outRed = 0
+        self.outGreen = 0
+        self.outBlue = 0
+        self.outAlpha = 0
+        self.outColor = QColor(self.outRed, self.outGreen, self.outBlue, self.outAlpha)
 
     def readData(self):
         config.read('settings.ini', encoding='utf-8')
@@ -50,6 +55,11 @@ class SettingData:
         self.blue = int(config.get('fontSettings', 'blue'))
         self.alpha = int(config.get('fontSettings', 'alpha'))
         self.qColor = QColor(self.red, self.green, self.blue, self.alpha)
+        self.outRed = int(config.get('fontSettings', 'outred'))
+        self.outGreen = int(config.get('fontSettings', 'outgreen'))
+        self.outBlue = int(config.get('fontSettings', 'outblue'))
+        self.outAlpha = int(config.get('fontSettings', 'outalpha'))
+        self.outColor = QColor(self.outRed, self.outGreen, self.outBlue, self.outAlpha)
 
     def writeData(self):
         config.set('file', 'filePath', self.filePath)
@@ -70,6 +80,11 @@ class SettingData:
         config.set('fontSettings', 'green', str(self.qColor.green()))
         config.set('fontSettings', 'blue', str(self.qColor.blue()))
         config.set('fontSettings', 'alpha', str(self.qColor.alpha()))
+        config.set('fontSettings', 'outred', str(self.outColor.red()))
+        config.set('fontSettings', 'outgreen', str(self.outColor.green()))
+        config.set('fontSettings', 'outblue', str(self.outColor.blue()))
+        config.set('fontSettings', 'outalpha', str(self.outColor.alpha()))
+
         with open('settings.ini', 'w', encoding='utf-8') as configfile:
             config.write(configfile)
 

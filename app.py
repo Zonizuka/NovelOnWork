@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from PySide6 import QtGui
 from PySide6.QtWidgets import QApplication, QWidget, QTabWidget, QVBoxLayout
 from filetab import FileTab
@@ -10,36 +12,35 @@ class MyWindow(QWidget):
         super().__init__()
         self.initUI()
 
-        self.settings = settingData
         try:
-            self.settings.readData()
+            settingData.readData()
+            print(settingData)
         except Exception as e:
             print(e)
 
         # 创建选项卡部件
-        self.tab_widget = QTabWidget()
+        self.tabWidget = QTabWidget()
 
         # 创建文件选项卡
-        self.file_tab = FileTab()
+        self.fileTab = FileTab()
         # 添加文件选项卡到 QTabWidget
-        self.tab_widget.addTab(self.file_tab, "文件")
+        self.tabWidget.addTab(self.fileTab, "文件")
 
         # 创建设置选项卡
-        self.settings_tab = SettingsTab()
+        self.settingTab = SettingsTab()
         # 添加设置选项卡到 QTabWidget
-        self.tab_widget.addTab(self.settings_tab, "设置")
+        self.tabWidget.addTab(self.settingTab, "设置")
 
         # 创建主布局
         layout = QVBoxLayout(self)
-        layout.addWidget(self.tab_widget)
+        layout.addWidget(self.tabWidget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
-        # 设置窗口的布局
 
     def initUI(self):
 
         self.setWindowTitle('工作神器')
+        # 设置总体程序大小默认300 * 200
         self.setGeometry(0, 0, 300, 200)
         self.center()
 
@@ -48,12 +49,6 @@ class MyWindow(QWidget):
         screen = QtGui.QGuiApplication.primaryScreen().availableGeometry()
         size = self.geometry()
         self.move(int((screen.width() - size.width()) / 2), int((screen.height() - size.height()) / 2))
-
-    def closeEvent(self, event):
-        settingData.writeData()
-
-        # 默认情况下，我们允许窗口关闭
-        event.accept()
 
 
 if __name__ == '__main__':
