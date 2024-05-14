@@ -5,7 +5,7 @@ from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, 
 from settingdata import settingData
 
 
-# 只支持utf-8和ANSI编码格式
+# 支持utf-8、ANSI、gbk编码格式
 def readText(fileName):
     # 读取文本
     if settingData.filePath != fileName:
@@ -31,9 +31,9 @@ class ReadWindow(QWidget):
     def __init__(self, fileName):
         super().__init__()
 
-        self.settings = settingData
+        # settingData = settingData
         self.textContent = readText(fileName)
-        self.text = self.rollPage(self.settings.currentPage)
+        self.text = self.rollPage(settingData.currentPage)
         self.initUI()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -43,6 +43,8 @@ class ReadWindow(QWidget):
         self.addAction(self.closeSelf)
         self.closeSelf.triggered.connect(self.close)
 
+        self.qPen = QPen(settingData.qColor)
+
         # 初始化鼠标按下的位置
         self.mousePosition = QPoint()
         self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
@@ -50,30 +52,30 @@ class ReadWindow(QWidget):
         # 添加快捷键
         self.next = QShortcut(QKeySequence(settingData.nextShortCut), self)
         self.last = QShortcut(QKeySequence(settingData.lastShortCut), self)
-        self.next.activated.connect(lambda: self.rollPageActive(self.settings.currentPage + 1))
-        self.last.activated.connect(lambda: self.rollPageActive(self.settings.currentPage - 1))
+        self.next.activated.connect(lambda: self.rollPageActive(settingData.currentPage + 1))
+        self.last.activated.connect(lambda: self.rollPageActive(settingData.currentPage - 1))
 
     def paintEvent(self, event):
 
         painter = QPainter(self)
-        painter.setFont(self.settings.qFont)
-        painter.setPen(QPen(self.settings.qColor))
+        painter.setFont(settingData.qFont)
+        painter.setPen(self.qPen)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
         textLines = self.text.split('\n')
-        metrics = QFontMetrics(self.settings.qFont)
+        metrics = QFontMetrics(settingData.qFont)
         yPosition = metrics.ascent()
         # 遍历文本行列表
         for line in textLines:
             # 在当前yPosition位置绘制文本行
             painter.drawText(QPoint(0, yPosition), line)
             # 更新yPosition位置为下一行文本的基线位置，包括行间距
-            yPosition += metrics.height() + self.settings.lineSpacing
+            yPosition += metrics.height() + settingData.lineSpacing
 
     def initUI(self):
         # 计算文本高度和宽度
-        fontMetrics = QFontMetrics(self.settings.qFont)
-        textWidth = fontMetrics.horizontalAdvance('中') * self.settings.lineSize
-        textHeight = (fontMetrics.height() + self.settings.lineSpacing) * self.settings.textLine - self.settings.lineSpacing
+        fontMetrics = QFontMetrics(settingData.qFont)
+        textWidth = fontMetrics.horizontalAdvance('中') * settingData.lineSize
+        textHeight = (fontMetrics.height() + settingData.lineSpacing) * settingData.textLine - settingData.lineSpacing
         # 获取主屏幕
         screen = QGuiApplication.primaryScreen()
         # 获取屏幕的尺寸
@@ -107,12 +109,12 @@ class ReadWindow(QWidget):
             else:
                 string += char
                 count += 1
-                if count >= self.settings.lineSize:
+                if count >= settingData.lineSize:
                     string += '\n'
                     count = 0
                     line += 1
             mark += 1
-            if line >= self.settings.textLine:
+            if line >= settingData.textLine:
                 break
         return string, mark
 
@@ -120,19 +122,19 @@ class ReadWindow(QWidget):
     def rollPage(self, page):
         if page < 0:
             return
-        pageOffset = page - self.settings.lastPage
+        pageOffset = page - settingData.lastPage
         if pageOffset >= 0:
-            text, nextMark = self.subText(self.settings.pages[page % self.settings.pageSize])
+            text, nextMark = self.subText(settingData.pages[page % settingData.pageSize])
             if len(text) == 0:
                 return
-            self.settings.currentPage = page
-            self.settings.pages[(page + 1) % self.settings.pageSize] = nextMark
-            self.settings.lastPage += 1
+            settingData.currentPage = page
+            settingData.pages[(page + 1) % settingData.pageSize] = nextMark
+            settingData.lastPage += 1
             return text
         else:
-            if -pageOffset < self.settings.pageSize:
-                self.settings.currentPage = page
-                text, _ = self.subText(self.settings.pages[page % self.settings.pageSize])
+            if -pageOffset < settingData.pageSize:
+                settingData.currentPage = page
+                text, _ = self.subText(settingData.pages[page % settingData.pageSize])
                 return text
             else:
                 return
@@ -169,3 +171,16 @@ class ReadWindow(QWidget):
         if text:
             self.text = text
             self.update()
+
+    def enterEvent(self, event: QMouseEvent) -> None:
+        self.qPen = QPen(settingData.qColor)
+        self.update()
+
+    def leaveEvent(self, event: QMouseEvent) -> None:
+        self.qPen = QPen(settingData.outColor)
+        self.update()
+
+    def closeEvent(self, event):
+        settingData.writeData()
+
+        event.accept()

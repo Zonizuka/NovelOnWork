@@ -22,6 +22,9 @@ class SettingsTab(QWidget):
         self.fontColorButton = QPushButton("字体颜色")
         self.fontColorButton.clicked.connect(self.changeColor)
 
+        self.outButton = QPushButton("鼠标移出")
+        self.outButton.clicked.connect(self.changeOutColor)
+
         self.textLineSet = QSpinBox()
         self.lineSizeSet = QSpinBox()
         self.lineSpacingSet = QSpinBox()
@@ -45,6 +48,7 @@ class SettingsTab(QWidget):
         self.fontLayout = QHBoxLayout()
         self.fontLayout.addWidget(self.fontButton)
         self.fontLayout.addWidget(self.fontColorButton)
+        self.fontLayout.addWidget(self.outButton)
 
         self.textLayout = QHBoxLayout()
         self.textLine = setTextAndComp('文本行数', self.textLineSet)
@@ -80,6 +84,11 @@ class SettingsTab(QWidget):
         color = QColorDialog.getColor(settingData.qColor, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if color.isValid():
             settingData.qColor = color
+
+    def changeOutColor(self):
+        color = QColorDialog.getColor(settingData.outColor, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        if color.isValid():
+            settingData.outColor = color
 
     def changeTextLine(self, value):
         settingData.textLine = value
