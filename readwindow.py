@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt, QPoint
+import re
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QPushButton, QHBoxLayout
+from PySide6.QtCore import Qt, QPoint, QSize
 from PySide6.QtGui import QMouseEvent, QGuiApplication, QPainter, QPen, QColor, QFontMetrics, \
-    QKeySequence, QShortcut, QAction
+    QKeySequence, QShortcut, QAction, QIcon
 from settingdata import settingData
 
 
@@ -31,17 +33,19 @@ class ReadWindow(QWidget):
     def __init__(self, fileName):
         super().__init__()
 
-        # settingData = settingData
         self.textContent = readText(fileName)
-        self.text = self.rollPage(settingData.currentPage)
+        self.text, _ = self.rollPage(settingData.currentPage)
+
         self.initUI()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.closeSelf = QAction("关闭")
-        self.addAction(self.closeSelf)
-        self.closeSelf.triggered.connect(self.close)
+        self.selectChapter = QAction('选择章节')
+        self.closeSelf = QAction('关闭')
+        self.search = QAction('搜索')
+        self.setAction()
+        self.scrollableMenu = None
+        self.searchMenu = None
 
         self.qPen = QPen(settingData.qColor)
 
@@ -121,23 +125,23 @@ class ReadWindow(QWidget):
     # 翻页功能，查找并处理文本
     def rollPage(self, page):
         if page < 0:
-            return
+            return None, None
         pageOffset = page - settingData.lastPage
         if pageOffset >= 0:
             text, nextMark = self.subText(settingData.pages[page % settingData.pageSize])
             if len(text) == 0:
-                return
+                return None, None
             settingData.currentPage = page
             settingData.pages[(page + 1) % settingData.pageSize] = nextMark
             settingData.lastPage += 1
-            return text
+            return text, nextMark
         else:
             if -pageOffset < settingData.pageSize:
                 settingData.currentPage = page
-                text, _ = self.subText(settingData.pages[page % settingData.pageSize])
-                return text
+                text, nextMark = self.subText(settingData.pages[page % settingData.pageSize])
+                return text, nextMark
             else:
-                return
+                return None, None
 
     def nativeEvent(self, eventType, message):
         # 处理Windows系统的WM_NCHITTEST消息，以允许拖拽
@@ -150,6 +154,23 @@ class ReadWindow(QWidget):
                     # 返回HTCAPTION，让系统知道点击的是标题栏区域
                     return True, 1  # HTCAPTION
         return super().nativeEvent(eventType, message)
+
+    def setAction(self):
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.addAction(self.selectChapter)
+        self.addAction(self.search)
+        self.addAction(self.closeSelf)
+        self.selectChapter.triggered.connect(self.displayChapter)
+        self.search.triggered.connect(self.displaySearch)
+        self.closeSelf.triggered.connect(self.close)
+
+    def displayChapter(self):
+        self.scrollableMenu = ScrollableMenu(self)
+        self.scrollableMenu.show()
+
+    def displaySearch(self):
+        self.searchMenu = SearchMenu(self)
+        self.searchMenu.show()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # 如果按下的是鼠标左键，记录按下时的位置
@@ -167,7 +188,7 @@ class ReadWindow(QWidget):
         self.mousePosition = QPoint()
 
     def rollPageActive(self, page):
-        text = self.rollPage(page)
+        text, _ = self.rollPage(page)
         if text:
             self.text = text
             self.update()
@@ -182,5 +203,106 @@ class ReadWindow(QWidget):
 
     def closeEvent(self, event):
         settingData.writeData()
-
         event.accept()
+
+    def getChapter(self):
+        chapter = {}
+        page = 0
+        mark = 0
+        temp, mark = self.subText(mark)
+        pattern = re.compile(r'(第)([\u4e00-\u9fa5a-zA-Z0-9]{1,7})[章|节].{0,20}(\n|$)')
+
+        while len(temp) > 1:
+            lines = temp.splitlines()
+            for i in range(len(lines)):
+                line = lines[i].strip()
+                if re.match(pattern, line):
+                    chapter[line] = page
+            page += 1
+            temp, mark = self.subText(mark)
+        return chapter
+
+    def jumpToChapter(self, item, chapter):
+        text = ''
+        page = chapter[item.text()]
+        settingData.currentPage = page
+        settingData.lastPage = page
+        mark = 0
+        for i in range(0, page + 1):
+            settingData.pages[i % settingData.pageSize] = mark
+            text, mark = self.subText(mark)
+        settingData.pages[(page + 1) % settingData.pageSize] = mark
+        self.text = text
+        self.update()
+
+    def searchContent(self, string, searchMenu):
+        count = 0
+        line = 0
+        page = 0
+        result = {}
+        for i in range(0, len(self.textContent)):
+            char = self.textContent[i]
+            if char == '\n':
+                try:
+                    if self.textContent[i + 1] != '\n':
+                        count = 0
+                        line += 1
+                except IndexError:
+                    break
+            else:
+                count += 1
+                if count >= settingData.lineSize:
+                    count = 0
+                    line += 1
+                if char == string[0]:
+                    if self.textContent[i: i + len(string)] == string:
+                        result[self.textContent[i: i + 20]] = page
+            if line >= settingData.textLine:
+                page += 1
+        searchMenu.displaySearchResult(result, self)
+
+
+class ScrollableMenu(QWidget):
+    def __init__(self, readWindow):
+        super().__init__()
+        chapter = readWindow.getChapter()
+        self.setWindowTitle('选择章节')
+        layout = QVBoxLayout(self)
+
+        listWidget = QListWidget()
+        for key in chapter.keys():
+            listWidget.addItem(QListWidgetItem(key))
+        listWidget.itemDoubleClicked.connect(lambda item: readWindow.jumpToChapter(item, chapter))
+
+        layout.addWidget(listWidget)
+
+
+class SearchMenu(QWidget):
+    def __init__(self, readWindow):
+        super().__init__()
+        self.setWindowTitle('搜索')
+
+        layout = QVBoxLayout(self)
+        searchLayout = QHBoxLayout()
+
+        self.searchLine = QLineEdit(self)
+        self.searchLine.setPlaceholderText('输入搜索内容...')
+
+        icon = QIcon.fromTheme(QIcon.ThemeIcon.EditFind)
+        self.searchButton = QPushButton()
+        self.searchButton.setFixedSize(QSize(18, 18))
+        self.searchButton.setFlat(True)
+        self.searchButton.setIcon(icon)
+        self.searchButton.clicked.connect(lambda: readWindow.searchContent(self.searchLine.text(), self))
+
+        self.listWidget = QListWidget()
+
+        searchLayout.addWidget(self.searchLine)
+        searchLayout.addWidget(self.searchButton)
+        layout.addLayout(searchLayout)
+        layout.addWidget(self.listWidget)
+
+    def displaySearchResult(self, result, readWindow):
+        for key in result.keys():
+            self.listWidget.addItem(QListWidgetItem(key))
+        self.listWidget.itemDoubleClicked.connect(lambda item: readWindow.jumpToChapter(item, result))
