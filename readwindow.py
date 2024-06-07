@@ -42,10 +42,10 @@ class ReadWindow(QWidget):
 
         self.selectChapter = QAction('选择章节')
         self.closeSelf = QAction('关闭')
-        self.search = QAction('搜索')
+        # self.search = QAction('搜索')
         self.setAction()
         self.scrollableMenu = None
-        self.searchMenu = None
+        # self.searchMenu = None
 
         self.qPen = QPen(settingData.qColor)
 
@@ -158,19 +158,19 @@ class ReadWindow(QWidget):
     def setAction(self):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.addAction(self.selectChapter)
-        self.addAction(self.search)
+        # self.addAction(self.search)
         self.addAction(self.closeSelf)
         self.selectChapter.triggered.connect(self.displayChapter)
-        self.search.triggered.connect(self.displaySearch)
+        # self.search.triggered.connect(self.displaySearch)
         self.closeSelf.triggered.connect(self.close)
 
     def displayChapter(self):
         self.scrollableMenu = ScrollableMenu(self)
         self.scrollableMenu.show()
 
-    def displaySearch(self):
-        self.searchMenu = SearchMenu(self)
-        self.searchMenu.show()
+    # def displaySearch(self):
+    #     self.searchMenu = SearchMenu(self)
+    #     self.searchMenu.show()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # 如果按下的是鼠标左键，记录按下时的位置
@@ -235,31 +235,31 @@ class ReadWindow(QWidget):
         self.text = text
         self.update()
 
-    def searchContent(self, string, searchMenu):
-        count = 0
-        line = 0
-        page = 0
-        result = {}
-        for i in range(0, len(self.textContent)):
-            char = self.textContent[i]
-            if char == '\n':
-                try:
-                    if self.textContent[i + 1] != '\n':
-                        count = 0
-                        line += 1
-                except IndexError:
-                    break
-            else:
-                count += 1
-                if count >= settingData.lineSize:
-                    count = 0
-                    line += 1
-                if char == string[0]:
-                    if self.textContent[i: i + len(string)] == string:
-                        result[self.textContent[i: i + 20]] = page
-            if line >= settingData.textLine:
-                page += 1
-        searchMenu.displaySearchResult(result, self)
+    # def searchContent(self, string, searchMenu):
+    #     count = 0
+    #     line = 0
+    #     page = 0
+    #     result = {}
+    #     for i in range(0, len(self.textContent)):
+    #         char = self.textContent[i]
+    #         if char == '\n':
+    #             try:
+    #                 if self.textContent[i + 1] != '\n':
+    #                     count = 0
+    #                     line += 1
+    #             except IndexError:
+    #                 break
+    #         else:
+    #             count += 1
+    #             if count >= settingData.lineSize:
+    #                 count = 0
+    #                 line += 1
+    #             if char == string[0]:
+    #                 if self.textContent[i: i + len(string)] == string:
+    #                     result[self.textContent[i: i + 20]] = page
+    #         if line >= settingData.textLine:
+    #             page += 1
+    #     searchMenu.displaySearchResult(result, self)
 
 
 class ScrollableMenu(QWidget):
@@ -277,32 +277,32 @@ class ScrollableMenu(QWidget):
         layout.addWidget(listWidget)
 
 
-class SearchMenu(QWidget):
-    def __init__(self, readWindow):
-        super().__init__()
-        self.setWindowTitle('搜索')
+# class SearchMenu(QWidget):
+#     def __init__(self, readWindow):
+#         super().__init__()
+#         self.setWindowTitle('搜索')
+#
+#         layout = QVBoxLayout(self)
+#         searchLayout = QHBoxLayout()
+#
+#         self.searchLine = QLineEdit(self)
+#         self.searchLine.setPlaceholderText('输入搜索内容...')
+#
+#         icon = QIcon.fromTheme(QIcon.ThemeIcon.EditFind)
+#         self.searchButton = QPushButton()
+#         self.searchButton.setFixedSize(QSize(18, 18))
+#         self.searchButton.setFlat(True)
+#         self.searchButton.setIcon(icon)
+#         self.searchButton.clicked.connect(lambda: readWindow.searchContent(self.searchLine.text(), self))
+#
+#         self.listWidget = QListWidget()
+#
+#         searchLayout.addWidget(self.searchLine)
+#         searchLayout.addWidget(self.searchButton)
+#         layout.addLayout(searchLayout)
+#         layout.addWidget(self.listWidget)
 
-        layout = QVBoxLayout(self)
-        searchLayout = QHBoxLayout()
-
-        self.searchLine = QLineEdit(self)
-        self.searchLine.setPlaceholderText('输入搜索内容...')
-
-        icon = QIcon.fromTheme(QIcon.ThemeIcon.EditFind)
-        self.searchButton = QPushButton()
-        self.searchButton.setFixedSize(QSize(18, 18))
-        self.searchButton.setFlat(True)
-        self.searchButton.setIcon(icon)
-        self.searchButton.clicked.connect(lambda: readWindow.searchContent(self.searchLine.text(), self))
-
-        self.listWidget = QListWidget()
-
-        searchLayout.addWidget(self.searchLine)
-        searchLayout.addWidget(self.searchButton)
-        layout.addLayout(searchLayout)
-        layout.addWidget(self.listWidget)
-
-    def displaySearchResult(self, result, readWindow):
-        for key in result.keys():
-            self.listWidget.addItem(QListWidgetItem(key))
-        self.listWidget.itemDoubleClicked.connect(lambda item: readWindow.jumpToChapter(item, result))
+    # def displaySearchResult(self, result, readWindow):
+    #     for key in result.keys():
+    #         self.listWidget.addItem(QListWidgetItem(key))
+    #     self.listWidget.itemDoubleClicked.connect(lambda item: readWindow.jumpToChapter(item, result))
